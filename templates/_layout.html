@@ -1,0 +1,8 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Megaphone"|t %}
+
+{% set tabs = {
+    migrate: { label: "Migrate"|t, url: url('megaphone') },
+    settings: { label: "Settings"|t, url: url('megaphone/settings') }
+} %}

@@ -1,0 +1,37 @@
+{% extends "megaphone/_layout" %}
+
+{% set selectedTab = 'migrate' %}
+
+{% import "_includes/forms" as forms %}
+
+{% set content %}
+	<form method="post" accept-charset="UTF-8" data-saveshortcut="1">
+
+		<input type="hidden" name="action" value="megaphone/handleMigrate">
+		<input type="hidden" name="redirect" value="megaphone/settings">
+
+		{{ forms.selectField({
+			label: "What do you want to do?"|t,
+			instructions: "Please choose action."|t,
+			id: 'action',
+			name: 'action',
+			options: [
+				'Pull',
+				'Push',
+			],
+		}) }}
+
+		{{ forms.textareaField({
+			label: "Connection string"|t,
+			instructions: "Paste in here the remote connection string."|t,
+			id: 'connectionString',
+			name: 'connectionString',
+			value: "hello world",
+		}) }}
+
+		<div class="buttons">
+			<input type="submit" class="btn submit" value="{{ 'Migrate'|t }}">
+		</div>
+
+	</form>
+{% endset %}
