@@ -2,8 +2,8 @@
 
 namespace Craft;
 
-class MegaphonePlugin extends BasePlugin {
-
+class MegaphonePlugin extends BasePlugin
+{
 	public function getName()
 	{
 		return Craft::t('Megaphone');
@@ -29,4 +29,12 @@ class MegaphonePlugin extends BasePlugin {
 		return true;
 	}
 
+	public function defineSettings()
+	{
+		return array(
+			'allowPull' => array(AttributeType::Bool),
+			'allowPush' => array(AttributeType::Bool),
+			'key' => array(AttributeType::String)
+		);
+	}
 }
