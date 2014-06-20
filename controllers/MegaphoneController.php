@@ -4,17 +4,18 @@ namespace Craft;
 
 class MegaphoneController extends BaseController
 {
-	protected $allowAnonymous = array('actionMigrate');
-
 	public function actionMigrate()
 	{
 		$this->requirePostRequest();
 
-		$action = craft()->request->getPost('operation');
-		$remote = craft()->request->getPost('connectionString');
+		$operation = craft()->request->getPost('operation');
+		$connectionString = craft()->request->getPost('connectionString');
 
-		$vars['action'] = $action;
-		$vars['remote'] = $remote;
+		$connectionArray = explode("?megaphone=", $connectionString);
+
+		$vars['operation'] = $operation;
+		$vars['remote'] = $connectionArray[0];
+		$vars['key'] = $connectionArray[1];
 
 		$this->renderTemplate('megaphone/_go', $vars);
 	}

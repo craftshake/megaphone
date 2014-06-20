@@ -7,8 +7,7 @@
 	<div id="status">{{ "Preparing to update…"|t }}</div>
 {% endblock %}
 
-
 {% set js %}
-	new Megaphone.Migrator('{{action}}', '{{remote}}');
+	new Megaphone.Migrator('{{ operation }}', '{{ remote }}', '{{ key }}');
 {% endset %}
 {% includeJs js %}

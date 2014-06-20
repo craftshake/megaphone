@@ -29,6 +29,11 @@ class MegaphonePlugin extends BasePlugin
 		return true;
 	}
 
+	public function onAfterInstall()
+	{
+		craft()->megaphone->resetKey();
+	}
+
 	public function defineSettings()
 	{
 		return array(
