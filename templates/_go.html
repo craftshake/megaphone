@@ -1,10 +1,11 @@
 {% extends "_layouts/basecp" %}
 {% set title = "Megaphone Migrate"|t %}
 {% includeCssResource "css/update.css" %}
+{% includeJsResource "megaphone/js/migrator.js" %}
 
 {% block body %}
 	<div id="graphic" class="spinner big"></div>
-	<div id="status">{{ "Preparing to update…"|t }}</div>
+	<div id="status">{{ "Preparing to migrate..."|t }}</div>
 {% endblock %}
 
 {% set js %}

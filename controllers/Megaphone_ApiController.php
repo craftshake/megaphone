@@ -2,7 +2,7 @@
 
 namespace Craft;
 
-class Megaphone_ApiController
+class Megaphone_ApiController extends BaseController
 {
 	public function actionPrepare()
 	{

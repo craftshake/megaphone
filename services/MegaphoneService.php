@@ -27,4 +27,54 @@ class MegaphoneService extends BaseApplicationComponent
 		$megaphone = craft()->plugins->getPlugin('megaphone');
 		return $megaphone->getSettings();
 	}
+
+	public function prepare()
+	{
+		try
+		{
+			// Get full power
+			craft()->config->maxPowerCaptain();
+
+			$result['success'] = true;
+
+			return $result;
+		}
+		catch(\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	public function download($remote, $key)
+	{
+		$result['success'] = true;
+
+		return $result;
+	}
+
+	public function backupDatabase()
+	{
+		return craft()->updates->backupDatabase();
+	}
+
+	public function updateDatabase()
+	{
+		$result['success'] = true;
+
+		return $result;
+	}
+
+	public function replaceStrings()
+	{
+		$result['success'] = true;
+
+		return $result;
+	}
+
+	public function clean()
+	{
+		$result['success'] = true;
+
+		return $result;
+	}
 }
