@@ -13,7 +13,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->prepare();
+		$return = craft()->megaphone->prepare($data['remote'], $data['key']);
 
 		if (!$return['success'])
 		{
@@ -21,7 +21,8 @@ class Megaphone_PullController extends BaseController
 		}
 		else
 		{
-			$this->returnJson(array('nextStatus' => Craft::t('Downloading remote database...'), 'nextAction' => 'download'));
+			$data['filename'] = $return['filename'];
+			$this->returnJson(array('nextStatus' => Craft::t('Downloading remote database...'), 'nextAction' => 'download', 'data' => $data));
 		}
 	}
 
@@ -34,7 +35,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->download($data['remote'], $data['key']);
+		$return = craft()->megaphone->download($data['remote'], $data['key'], $data['filename']);
 
 		if (!$return['success'])
 		{
@@ -42,7 +43,7 @@ class Megaphone_PullController extends BaseController
 		}
 		else
 		{
-			$this->returnJson(array('nextStatus' => Craft::t('Backing up local database...'), 'nextAction' => 'backup'));
+			$this->returnJson(array('nextStatus' => Craft::t('Backing up local database...'), 'nextAction' => 'backup', 'data' => $data));
 		}
 	}
 
@@ -50,6 +51,8 @@ class Megaphone_PullController extends BaseController
 	{
 		$this->requirePostRequest();
 		$this->requireAjaxRequest();
+
+		$data = craft()->request->getRequiredPost('data');
 
 		sleep(1);
 
@@ -61,10 +64,7 @@ class Megaphone_PullController extends BaseController
 		}
 		else
 		{
-			if (isset($return['dbBackupPath']))
-			{
-				$data['dbBackupPath'] = $return['dbBackupPath'];
-			}
+			$data['dbBackupPath'] = $return['dbBackupPath'];
 			$this->returnJson(array('nextStatus' => Craft::t('Updating local database...'), 'nextAction' => 'update', 'data' => $data));
 		}
 	}
@@ -76,7 +76,9 @@ class Megaphone_PullController extends BaseController
 
 		sleep(1);
 
-		$return = craft()->megaphone->updateDatabase();
+		$data = craft()->request->getRequiredPost('data');
+
+		$return = craft()->megaphone->updateDatabase($data['filename']);
 
 		if (!$return['success'])
 		{
@@ -84,7 +86,7 @@ class Megaphone_PullController extends BaseController
 		}
 		else
 		{
-			$this->returnJson(array('nextStatus' => Craft::t('Replacing strings in database...'), 'nextAction' => 'replace'));
+			$this->returnJson(array('nextStatus' => Craft::t('Replacing strings in database...'), 'nextAction' => 'replace', 'data' => $data));
 		}
 	}
 
@@ -95,6 +97,8 @@ class Megaphone_PullController extends BaseController
 
 		sleep(1);
 
+		$data = craft()->request->getRequiredPost('data');
+
 		$return = craft()->megaphone->replaceStrings();
 
 		if (!$return['success'])
@@ -103,7 +107,7 @@ class Megaphone_PullController extends BaseController
 		}
 		else
 		{
-			$this->returnJson(array('nextStatus' => Craft::t('Cleaning up...'), 'nextAction' => 'clean'));
+			$this->returnJson(array('nextStatus' => Craft::t('Cleaning up...'), 'nextAction' => 'clean', 'data' => $data));
 		}
 	}
 

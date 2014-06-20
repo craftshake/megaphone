@@ -28,16 +28,35 @@ class MegaphoneService extends BaseApplicationComponent
 		return $megaphone->getSettings();
 	}
 
-	public function prepare()
+	public function prepare($remote, $key)
 	{
 		try
 		{
-			// Get full power
-			craft()->config->maxPowerCaptain();
+			// Prepare remote sql file
+			$endpoint = $remote;
 
-			$result['success'] = true;
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/prepare')
+				->setPostField('key', $key);
 
-			return $result;
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				$result['filename'] = $json['data']['filename'];
+				$result['success'] = true;
+
+				return $result;
+			}
+			else
+			{
+				// We connected but error
+				return array('success' => false, 'message' => Craft::t('Error preparing .sql file on remote'));
+			}
+
 		}
 		catch(\Exception $e)
 		{
@@ -45,11 +64,54 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
-	public function download($remote, $key)
+	public function download($remote, $key, $filename)
 	{
-		$result['success'] = true;
+		try
+		{
+			$destinationPath = craft()->path->getTempPath() . $filename;
 
-		return $result;
+			$endpoint = $remote;
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/download')
+				->setPostField('key', $key)
+				->setPostField('filename', $filename);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$body = $response->getBody();
+
+				// Make sure we're at the beginning of the stream.
+				$body->rewind();
+
+				// Write it out to the file
+				IOHelper::writeToFile($destinationPath, $body->getStream(), true);
+
+				// Close the stream.
+				$body->close();
+
+				$file = IOHelper::getFileName($destinationPath);
+			}
+
+			if ($file !== false)
+			{
+				$result['success'] = true;
+				$result['downloadedFile'] = $file;
+
+				return $result;
+			}
+			else
+			{
+				throw new Exception(Craft::t('There was a problem downloading the database.'));
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
 	}
 
 	public function backupDatabase()
@@ -57,8 +119,12 @@ class MegaphoneService extends BaseApplicationComponent
 		return craft()->updates->backupDatabase();
 	}
 
-	public function updateDatabase()
+	public function updateDatabase($file)
 	{
+		$dbBackup = new DbBackup();
+		$filePath = craft()->path->getTempPath() . $file;
+		$dbBackup->restore($filePath);
+
 		$result['success'] = true;
 
 		return $result;

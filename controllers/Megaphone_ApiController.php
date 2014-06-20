@@ -4,9 +4,24 @@ namespace Craft;
 
 class Megaphone_ApiController extends BaseController
 {
+	protected $allowAnonymous = true;
+
 	public function actionPrepare()
 	{
+		$this->requirePostRequest();
 		$this->requireKey();
+
+		$return = craft()->megaphone->backupDatabase();
+
+		if (!$return['success'])
+		{
+			$this->returnJson(array('errorDetails' => $return['message']));
+		}
+		else
+		{
+			$data['filename'] = $return['dbBackupPath'] . '.sql';
+			$this->returnJson(array('data' => $data));
+		}
 	}
 
 	public function actionBackup()
@@ -16,7 +31,15 @@ class Megaphone_ApiController extends BaseController
 
 	public function actionDownload()
 	{
+		$this->requirePostRequest();
 		$this->requireKey();
+
+		$file = craft()->request->getRequiredPost('filename');
+
+		if (($filePath = IOHelper::fileExists(craft()->path->getDbBackupPath() . $file)) == true)
+		{
+			craft()->request->sendFile(IOHelper::getFileName($filePath), IOHelper::getFileContents($filePath), array('forceDownload' => false));
+		}
 	}
 
 	public function actionUpload()
@@ -36,7 +59,7 @@ class Megaphone_ApiController extends BaseController
 
 	public function requireKey()
 	{
-		$key = craft()->request->getRequiredQuery('key');
+		$key = craft()->request->getRequiredPost('key');
 		$settings = craft()->megaphone->getSettings();
 		if ($key !== $settings->key)
 		{
