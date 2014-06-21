@@ -28,7 +28,7 @@ class MegaphoneService extends BaseApplicationComponent
 		return $megaphone->getSettings();
 	}
 
-	public function prepare($remote, $key)
+	public function prepareRemoteDatabase($remote, $key)
 	{
 		try
 		{
@@ -69,6 +69,11 @@ class MegaphoneService extends BaseApplicationComponent
 		{
 			return array('success' => false, 'message' => $e->getMessage());
 		}
+	}
+
+	public function prepareLocalDatabase()
+	{
+
 	}
 
 	public function download($remote, $key, $filename)
@@ -126,6 +131,11 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
+	public function upload($remote, $key, $filename)
+	{
+
+	}
+
 	public function backupDatabase()
 	{
 		return craft()->updates->backupDatabase();
@@ -158,8 +168,14 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
-	public function clean()
+	public function clean($filename, $dbBackup)
 	{
+		IOHelper::deleteFile(craft()->path->getTempPath() . $filename, true);
+		IOHelper::deleteFile(craft()->path->getDbBackupPath() . $filename, true);
+
+		IOHelper::deleteFile(craft()->path->getTempPath() . $dbBackup, true);
+		IOHelper::deleteFile(craft()->path->getDbBackupPath() . $dbBackup, true);
+
 		$result['success'] = true;
 
 		return $result;
@@ -168,7 +184,7 @@ class MegaphoneService extends BaseApplicationComponent
 	public function rollback($backupFile)
 	{
 		$dbBackup = new DbBackup();
-		$filePath = craft()->path->getDbBackupPath() . $backupFile . '.sql';
+		$filePath = craft()->path->getDbBackupPath() . $backupFilee;
 		$dbBackup->restore($filePath);
 
 		$result['success'] = true;

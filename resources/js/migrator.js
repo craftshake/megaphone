@@ -12,7 +12,7 @@ Megaphone.Migrator = Garnish.Base.extend(
 
 	operation: null,
 
-	init: function(operation, remote, key, siteName, siteUrl)
+	init: function(operation, remote, key)
 	{
 		this.$graphic = $('#graphic');
 		this.$status = $('#status');
@@ -21,9 +21,7 @@ Megaphone.Migrator = Garnish.Base.extend(
 
 		this.data = {
 			remote: remote,
-			key: key,
-			siteName: siteName,
-			siteUrl: siteUrl
+			key: key
 		};
 
 		this.postActionRequest('megaphone/'+ this.operation +'/prepare');
