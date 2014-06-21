@@ -15,12 +15,12 @@ class Megaphone_ApiController extends BaseController
 
 		if (!$return['success'])
 		{
-			$this->returnJson(array('errorDetails' => $return['message']));
+			$this->returnErrorJson($return['message']);
 		}
 		else
 		{
 			$data['filename'] = $return['dbBackupPath'] . '.sql';
-			$this->returnJson(array('data' => $data));
+			$this->returnJson(array('success' => true, 'data' => $data));
 		}
 	}
 
@@ -63,7 +63,7 @@ class Megaphone_ApiController extends BaseController
 		$settings = craft()->megaphone->getSettings();
 		if ($key !== $settings->key)
 		{
-			$this->returnJson(array('errorDetails' => Craft::t('Invalid key.'), 'finished' => true));
+			$this->returnErrorJson(Craft::t('Invalid key.'));
 		}
 	}
 }

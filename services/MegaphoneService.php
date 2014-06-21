@@ -46,15 +46,22 @@ class MegaphoneService extends BaseApplicationComponent
 			{
 				$json = $response->json();
 
-				$result['filename'] = $json['data']['filename'];
-				$result['success'] = true;
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					$result['filename'] = $json['data']['filename'];
+					$result['success'] = true;
 
-				return $result;
+					return $result;
+				}
 			}
 			else
 			{
-				// We connected but error
-				return array('success' => false, 'message' => Craft::t('Error preparing .sql file on remote'));
+				// We connected but received error
+				throw new Exception(Craft::t('Server responded with error.'));
 			}
 
 		}
@@ -82,6 +89,11 @@ class MegaphoneService extends BaseApplicationComponent
 
 			if ($response->isSuccessful())
 			{
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+
 				$body = $response->getBody();
 
 				// Make sure we're at the beginning of the stream.
