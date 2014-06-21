@@ -142,15 +142,35 @@ class MegaphoneService extends BaseApplicationComponent
 		return $result;
 	}
 
-	public function replaceStrings()
+	public function replaceStrings($siteName, $siteUrl)
+	{
+		$info = craft()->getInfo();
+		$info->siteName = $siteName;
+		$info->siteUrl = $siteUrl;
+
+		if (craft()->saveInfo($info))
+		{
+			return array('success' => true);
+		}
+		else
+		{
+			return array('success' => false, 'message' => Craft::t('There was a problem replacing strings.'));
+		}
+	}
+
+	public function clean()
 	{
 		$result['success'] = true;
 
 		return $result;
 	}
 
-	public function clean()
+	public function rollback($backupFile)
 	{
+		$dbBackup = new DbBackup();
+		$filePath = craft()->path->getDbBackupPath() . $backupFile . '.sql';
+		$dbBackup->restore($filePath);
+
 		$result['success'] = true;
 
 		return $result;

@@ -9,6 +9,6 @@
 {% endblock %}
 
 {% set js %}
-	new Megaphone.Migrator('{{ operation }}', '{{ remote }}', '{{ key }}');
+	new Megaphone.Migrator('{{ operation }}', '{{ remote }}', '{{ key }}', '{{ siteName }}', '{{ siteUrl }}');
 {% endset %}
 {% includeJs js %}

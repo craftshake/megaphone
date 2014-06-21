@@ -99,7 +99,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->replaceStrings();
+		$return = craft()->megaphone->replaceStrings($data['siteName'], $data['siteUrl']);
 
 		if (!$return['success'])
 		{
@@ -125,6 +125,15 @@ class Megaphone_PullController extends BaseController
 
 	public function actionRollback()
 	{
+		$this->requirePostRequest();
+		$this->requireAjaxRequest();
 
+		$data = craft()->request->getRequiredPost('data');
+
+		sleep(1);
+
+		craft()->megaphone->rollback($data['dbBackupPath']);
+
+		$this->returnJson(array('finished' => true, 'rollBack' => true));
 	}
 }

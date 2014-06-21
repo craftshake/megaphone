@@ -8,10 +8,11 @@ Megaphone.Migrator = Garnish.Base.extend(
 	$status: null,
 	$errorDetails: null,
 	data: null,
+	strings: null,
 
 	operation: null,
 
-	init: function(operation, remote, key)
+	init: function(operation, remote, key, siteName, siteUrl)
 	{
 		this.$graphic = $('#graphic');
 		this.$status = $('#status');
@@ -20,7 +21,9 @@ Megaphone.Migrator = Garnish.Base.extend(
 
 		this.data = {
 			remote: remote,
-			key: key
+			key: key,
+			siteName: siteName,
+			siteUrl: siteUrl
 		};
 
 		this.postActionRequest('megaphone/'+ this.operation +'/prepare');
@@ -99,7 +102,7 @@ Megaphone.Migrator = Garnish.Base.extend(
 	onErrorResponse: function(jqXHR)
 	{
 		this.$graphic.addClass('error');
-		var errorText = Craft.t('An error has occurred.  Please contact {email} and be sure to include the error message.', { email: '<a href="mailto:support@buildwithcraft.com?subject=Craft+Update+Failure">support@buildwithcraft.com</a>'} ) + '<br /><p>' + jqXHR.statusText + '</p><br /><p>' + jqXHR.responseText + '</p>';
+		var errorText = Craft.t('An error has occurred.') + '<br /><p>' + jqXHR.statusText + '</p><br /><p>' + jqXHR.responseText + '</p>';
 
 		this.updateStatus(errorText);
 	},
@@ -109,18 +112,19 @@ Megaphone.Migrator = Garnish.Base.extend(
 		if (this.$errorDetails)
 		{
 			this.$graphic.addClass('error');
-			var errorText = Craft.t('Craft was unable to install this update :(') + '<br /><p>';
+			var errorText = Craft.t('Megaphone was unable to migrate the database :(') + '<br /><p>';
 
 			if (rollBack)
 			{
-				errorText += Craft.t('The site has been restored to the state it was in before the attempted update.') + '</p><br /><p>';
+				errorText += Craft.t('The database has been restored to the state it was in before the attempted migration.') + '</p><br /><p>';
 			}
 			else
 			{
-				errorText += Craft.t('No files have been updated and the database has not been touched.') + '</p><br /><p>';
+				errorText += Craft.t('The database has not been touched.') + '</p><br /><p>';
 			}
 
 			errorText += this.$errorDetails + '</p>';
+			errorText += '<p><a href="' + Craft.getCpUrl() + '" class="btn">Back</a></p>';
 			this.updateStatus(errorText);
 		}
 		else
