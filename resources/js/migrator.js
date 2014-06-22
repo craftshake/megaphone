@@ -21,7 +21,8 @@ Megaphone.Migrator = Garnish.Base.extend(
 
 		this.data = {
 			remote: remote,
-			key: key
+			key: key,
+			operation: this.operation
 		};
 
 		this.postActionRequest('megaphone/'+ this.operation +'/prepare');
@@ -122,7 +123,7 @@ Megaphone.Migrator = Garnish.Base.extend(
 			}
 
 			errorText += this.$errorDetails + '</p>';
-			errorText += '<p><a href="' + Craft.getCpUrl() + '" class="btn">Back</a></p>';
+			errorText += '<p><a href="' + Craft.getCpUrl('megaphone') + '" class="btn">Back</a></p>';
 			this.updateStatus(errorText);
 		}
 		else

@@ -9,7 +9,13 @@ class Megaphone_ApiController extends BaseController
 	public function actionPrepareForPull()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
+
+		$settings = craft()->megaphone->getSettings();
+		if (!$settings->allowPull)
+		{
+			$this->returnErrorJson('Pull is not enabled on remote');
+		}
 
 		$return = craft()->megaphone->backupLocalDatabase();
 
@@ -27,7 +33,13 @@ class Megaphone_ApiController extends BaseController
 	public function actionPrepareForPush()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
+
+		$settings = craft()->megaphone->getSettings();
+		if (!$settings->allowPush)
+		{
+			$this->returnErrorJson('Push is not enabled on remote');
+		}
 
 		$data = array(
 			'siteName' => craft()->getSiteName(),
@@ -45,7 +57,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionDownload()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$file = craft()->request->getRequiredPost('filename');
 
@@ -58,7 +70,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionUpload()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$return = craft()->megaphone->receive();
 
@@ -75,7 +87,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionUpdate()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -94,7 +106,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionReplace()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -113,7 +125,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionClean()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -125,7 +137,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionRollback()
 	{
 		$this->requirePostRequest();
-		$this->requireKey();
+		$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -134,9 +146,14 @@ class Megaphone_ApiController extends BaseController
 		$this->returnJson(array('success' => true));
 	}
 
-	public function requireKey()
+	public function requireMegaphoneKey()
 	{
 		$key = craft()->request->getRequiredPost('key');
+		$plugin = craft()->plugins->getPlugin('megaphone');
+		if ($plugin == null)
+		{
+			$this->returnErrorJson(Craft::t('Megaphone is not installed or enabled on remote.'));
+		}
 		$settings = craft()->megaphone->getSettings();
 		if ($key !== $settings->key)
 		{
