@@ -28,7 +28,7 @@ class MegaphoneService extends BaseApplicationComponent
 		return $megaphone->getSettings();
 	}
 
-	public function prepareRemoteDatabase($remote, $key)
+	public function preparePull($remote, $key)
 	{
 		try
 		{
@@ -37,7 +37,7 @@ class MegaphoneService extends BaseApplicationComponent
 
 			$client = new \Guzzle\Http\Client();
 			$request = $client->post($endpoint)
-				->setPostField('action', 'megaphone/api/prepare')
+				->setPostField('action', 'megaphone/api/prepareForPull')
 				->setPostField('key', $key);
 
 			$response = $client->send($request);
@@ -71,9 +71,58 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
-	public function prepareLocalDatabase()
+	public function preparePush($data)
 	{
+		try
+		{
+			$endpoint = $data['remote'];
 
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/prepareForPush')
+				->setPostField('key', $data['key']);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					$result['siteName'] = $json['data']['siteName'];
+					$result['siteUrl'] = $json['data']['siteUrl'];
+				}
+			}
+			else
+			{
+				// We connected but received error
+				throw new Exception(Craft::t('Server responded with error.'));
+			}
+
+			$return = $this->backupLocalDatabase();
+
+			if (!$return['success'])
+			{
+				throw new Exception($return['message']);
+			}
+			else
+			{
+				$result['filename'] = $return['dbBackupPath'] . '.sql';
+			}
+
+			$result['success'] = true;
+
+			return $result;
+		}
+		catch(\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
 	}
 
 	public function download($remote, $key, $filename)
@@ -94,11 +143,6 @@ class MegaphoneService extends BaseApplicationComponent
 
 			if ($response->isSuccessful())
 			{
-				if (isset($json['error']))
-				{
-					throw new Exception($json['error']);
-				}
-
 				$body = $response->getBody();
 
 				// Make sure we're at the beginning of the stream.
@@ -131,17 +175,117 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
-	public function upload($remote, $key, $filename)
+	public function upload($data)
 	{
+		try
+		{
+			$sourcePath = craft()->path->getDbBackupPath() . $data['filename'];
 
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/upload')
+				->setPostField('key', $data['key'])
+				->setPostField('filename', $data['filename'])
+				->addPostFile('dbfile', $sourcePath);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					return array('success' => true);
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
 	}
 
-	public function backupDatabase()
+	public function receive()
+	{
+		try
+		{
+			$filePath = craft()->path->getTempPath() . craft()->request->getRequiredPost('filename');
+
+			$file = $_FILES['dbfile'];
+
+			if (empty($file['name']))
+			{
+				throw new Exception(Craft::t('No file was uploaded'));
+			}
+
+			$size = $file['size'];
+
+			// Make sure the file isn't empty
+			if (!$size)
+			{
+				throw new Exception(Craft::t('Uploaded file was empty'));
+			}
+
+			move_uploaded_file($file['tmp_name'], $filePath);
+
+			return array('success' => true);
+		}
+		catch (Exception $e)
+		{
+
+		}
+	}
+
+	public function backupLocalDatabase()
 	{
 		return craft()->updates->backupDatabase();
 	}
 
-	public function updateDatabase($file)
+	public function backupRemoteDatabase($data)
+	{
+		try
+		{
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/backup')
+				->setPostField('key', $data['key'])
+				->setPostField('filename', $data['filename']);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					$result['success'] = true;
+					$result['dbBackupPath'] = $json['data']['filename'];
+
+					return $result;
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	public function updateLocalDatabase($file)
 	{
 		$dbBackup = new DbBackup();
 		$filePath = craft()->path->getTempPath() . $file;
@@ -152,7 +296,41 @@ class MegaphoneService extends BaseApplicationComponent
 		return $result;
 	}
 
-	public function replaceStrings($siteName, $siteUrl)
+	public function updateRemoteDatabase($data)
+	{
+		try
+		{
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/update')
+				->setPostField('key', $data['key'])
+				->setPostField('data', $data);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					return array('success' => true);
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	public function replaceLocalStrings($siteName, $siteUrl)
 	{
 		$info = craft()->getInfo();
 		$info->siteName = $siteName;
@@ -168,7 +346,41 @@ class MegaphoneService extends BaseApplicationComponent
 		}
 	}
 
-	public function clean($filename, $dbBackup)
+	public function replaceRemoteStrings($data)
+	{
+		try
+		{
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/replace')
+				->setPostField('key', $data['key'])
+				->setPostField('data', $data);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					return array('success' => true);
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	public function cleanLocalFiles($filename, $dbBackup)
 	{
 		IOHelper::deleteFile(craft()->path->getTempPath() . $filename, true);
 		IOHelper::deleteFile(craft()->path->getDbBackupPath() . $filename, true);
@@ -181,7 +393,41 @@ class MegaphoneService extends BaseApplicationComponent
 		return $result;
 	}
 
-	public function rollback($backupFile)
+	public function cleanRemoteFiles($data)
+	{
+		try
+		{
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/clean')
+				->setPostField('key', $data['key'])
+				->setPostField('data', $data);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					return array('success' => true);
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	public function rollbackLocalDatabase($backupFile)
 	{
 		$dbBackup = new DbBackup();
 		$filePath = craft()->path->getDbBackupPath() . $backupFilee;
@@ -190,5 +436,39 @@ class MegaphoneService extends BaseApplicationComponent
 		$result['success'] = true;
 
 		return $result;
+	}
+
+	public function rollbackRemoteDatabase($backupFile)
+	{
+		try
+		{
+			$endpoint = $data['remote'];
+
+			$client = new \Guzzle\Http\Client();
+			$request = $client->post($endpoint)
+				->setPostField('action', 'megaphone/api/rollback')
+				->setPostField('key', $data['key'])
+				->setPostField('data', $data);
+
+			$response = $client->send($request);
+
+			if ($response->isSuccessful())
+			{
+				$json = $response->json();
+
+				if (isset($json['error']))
+				{
+					throw new Exception($json['error']);
+				}
+				else
+				{
+					return array('success' => true);
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			return array('success' => false, 'message' => $e->getMessage());
+		}
 	}
 }

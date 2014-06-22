@@ -6,12 +6,12 @@ class Megaphone_ApiController extends BaseController
 {
 	protected $allowAnonymous = true;
 
-	public function actionPrepare()
+	public function actionPrepareForPull()
 	{
 		$this->requirePostRequest();
 		$this->requireKey();
 
-		$return = craft()->megaphone->backupDatabase();
+		$return = craft()->megaphone->backupLocalDatabase();
 
 		if (!$return['success'])
 		{
@@ -24,9 +24,22 @@ class Megaphone_ApiController extends BaseController
 		}
 	}
 
+	public function actionPrepareForPush()
+	{
+		$this->requirePostRequest();
+		$this->requireKey();
+
+		$data = array(
+			'siteName' => craft()->getSiteName(),
+			'siteUrl' => craft()->getSiteUrl()
+		);
+
+		$this->returnJson(array('success' => true, 'data' => $data));
+	}
+
 	public function actionBackup()
 	{
-		$this->requireKey();
+		$this->actionPrepareForPull();
 	}
 
 	public function actionDownload()
@@ -44,17 +57,81 @@ class Megaphone_ApiController extends BaseController
 
 	public function actionUpload()
 	{
+		$this->requirePostRequest();
 		$this->requireKey();
+
+		$return = craft()->megaphone->receive();
+
+		if (!$return['success'])
+		{
+			$this->returnErrorJson($return['message']);
+		}
+		else
+		{
+			$this->returnJson(array('success' => true));
+		}
+	}
+
+	public function actionUpdate()
+	{
+		$this->requirePostRequest();
+		$this->requireKey();
+
+		$data = craft()->request->getRequiredPost('data');
+
+		$return = craft()->megaphone->updateLocalDatabase($data['filename']);
+
+		if (!$return['success'])
+		{
+			$this->returnErrorJson($return['message']);
+		}
+		else
+		{
+			$this->returnJson(array('success' => true));
+		}
 	}
 
 	public function actionReplace()
 	{
+		$this->requirePostRequest();
 		$this->requireKey();
+
+		$data = craft()->request->getRequiredPost('data');
+
+		$return = craft()->megaphone->replaceLocalStrings($data['siteName'], $data['siteUrl']);
+
+		if (!$return['success'])
+		{
+			$this->returnErrorJson($return['message']);
+		}
+		else
+		{
+			$this->returnJson(array('success' => true));
+		}
 	}
 
 	public function actionClean()
 	{
+		$this->requirePostRequest();
 		$this->requireKey();
+
+		$data = craft()->request->getRequiredPost('data');
+
+		craft()->megaphone->cleanLocalFiles($data['filename'], $data['dbBackupPath']);
+
+		$this->returnJson(array('success' => true));
+	}
+
+	public function actionRollback()
+	{
+		$this->requirePostRequest();
+		$this->requireKey();
+
+		$data = craft()->request->getRequiredPost('data');
+
+		craft()->megaphone->rollbackLocalDatabase($data['dbBackupPath']);
+
+		$this->returnJson(array('success' => true));
 	}
 
 	public function requireKey()

@@ -13,7 +13,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->prepareRemoteDatabase($data['remote'], $data['key']);
+		$return = craft()->megaphone->preparePull($data['remote'], $data['key']);
 
 		if (!$return['success'])
 		{
@@ -58,11 +58,11 @@ class Megaphone_PullController extends BaseController
 
 		sleep(1);
 
-		$return = craft()->megaphone->backupDatabase();
+		$return = craft()->megaphone->backupLocalDatabase();
 
 		if (!$return['success'])
 		{
-			$this->returnJson(array('errorDetails' => $return['message'], 'nextStatus' => Craft::t('An error was encountered.'), 'nextAction' => 'rollback'));
+			$this->returnJson(array('errorDetails' => $return['message'], 'nextStatus' => Craft::t('An error was encountered.'), 'finished' => true));
 		}
 		else
 		{
@@ -80,7 +80,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->updateDatabase($data['filename']);
+		$return = craft()->megaphone->updateLocalDatabase($data['filename']);
 
 		if (!$return['success'])
 		{
@@ -101,7 +101,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		$return = craft()->megaphone->replaceStrings($data['siteName'], $data['siteUrl']);
+		$return = craft()->megaphone->replaceLocalStrings($data['siteName'], $data['siteUrl']);
 
 		if (!$return['success'])
 		{
@@ -122,7 +122,7 @@ class Megaphone_PullController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		craft()->megaphone->clean($data['filename'], $data['dbBackupPath']);
+		craft()->megaphone->cleanLocalFiles($data['filename'], $data['dbBackupPath']);
 
 		$this->returnJson(array('finished' => true, 'returnUrl' => 'megaphone'));
 	}
@@ -136,7 +136,7 @@ class Megaphone_PullController extends BaseController
 
 		sleep(1);
 
-		craft()->megaphone->rollback($data['dbBackupPath']);
+		craft()->megaphone->rollbackLocalDatabase($data['dbBackupPath']);
 
 		$this->returnJson(array('finished' => true, 'rollBack' => true));
 	}
