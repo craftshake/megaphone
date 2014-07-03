@@ -10,12 +10,19 @@ class MegaphoneService extends BaseApplicationComponent
 		craft()->plugins->savePluginSettings($megaphone, $settings);
 	}
 
-	public function resetKey()
+	public function resetKey($key = null)
 	{
 		$megaphone = craft()->plugins->getPlugin('megaphone');
 
 		$settings = $megaphone->getSettings();
-		$settings['key'] = craft()->security->generateRandomString(16);
+		if ($key == null)
+		{
+			$settings['key'] = craft()->security->generateRandomString(16);
+		}
+		else
+		{
+			$settings['key'] = $key;
+		}
 
 		craft()->plugins->savePluginSettings($megaphone, $settings);
 
@@ -430,7 +437,7 @@ class MegaphoneService extends BaseApplicationComponent
 	public function rollbackLocalDatabase($backupFile)
 	{
 		$dbBackup = new DbBackup();
-		$filePath = craft()->path->getDbBackupPath() . $backupFilee;
+		$filePath = craft()->path->getDbBackupPath() . $backupFile;
 		$dbBackup->restore($filePath);
 
 		$result['success'] = true;
@@ -438,7 +445,7 @@ class MegaphoneService extends BaseApplicationComponent
 		return $result;
 	}
 
-	public function rollbackRemoteDatabase($backupFile)
+	public function rollbackRemoteDatabase($data)
 	{
 		try
 		{

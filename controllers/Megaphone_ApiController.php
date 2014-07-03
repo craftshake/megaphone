@@ -51,7 +51,17 @@ class Megaphone_ApiController extends BaseController
 
 	public function actionBackup()
 	{
-		$this->actionPrepareForPull();
+		$return = craft()->megaphone->backupLocalDatabase();
+
+		if (!$return['success'])
+		{
+			$this->returnErrorJson($return['message']);
+		}
+		else
+		{
+			$data['filename'] = $return['dbBackupPath'] . '.sql';
+			$this->returnJson(array('success' => true, 'data' => $data));
+		}
 	}
 
 	public function actionDownload()
@@ -89,9 +99,13 @@ class Megaphone_ApiController extends BaseController
 		$this->requirePostRequest();
 		$this->requireMegaphoneKey();
 
+		$key = craft()->request->getRequiredPost('key');
 		$data = craft()->request->getRequiredPost('data');
 
 		$return = craft()->megaphone->updateLocalDatabase($data['filename']);
+
+		Craft::log('Reseting Megaphone key', LogLevel::Info, true);
+		craft()->megaphone->resetKey($key);
 
 		if (!$return['success'])
 		{
@@ -106,7 +120,7 @@ class Megaphone_ApiController extends BaseController
 	public function actionReplace()
 	{
 		$this->requirePostRequest();
-		$this->requireMegaphoneKey();
+		//$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -137,7 +151,6 @@ class Megaphone_ApiController extends BaseController
 	public function actionRollback()
 	{
 		$this->requirePostRequest();
-		$this->requireMegaphoneKey();
 
 		$data = craft()->request->getRequiredPost('data');
 
@@ -155,9 +168,9 @@ class Megaphone_ApiController extends BaseController
 			$this->returnErrorJson(Craft::t('Megaphone is not installed or enabled on remote.'));
 		}
 		$settings = craft()->megaphone->getSettings();
-		if ($key !== $settings->key)
+		if ($key != $settings->key)
 		{
-			$this->returnErrorJson(Craft::t('Invalid key.'));
+			$this->returnErrorJson(Craft::t('Invalid key: '.$settings->key));
 		}
 	}
 }

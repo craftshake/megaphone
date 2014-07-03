@@ -143,7 +143,7 @@ class Megaphone_PushController extends BaseController
 
 		$data = craft()->request->getRequiredPost('data');
 
-		craft()->megaphone->rollbackRemoteDatabase($data['dbBackupPath']);
+		craft()->megaphone->rollbackRemoteDatabase($data);
 
 		$this->returnJson(array('finished' => true, 'rollBack' => true));
 	}
